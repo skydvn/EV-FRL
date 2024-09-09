@@ -26,12 +26,20 @@ class Server(object):
         self.args = args
         self.device = args.device
         self.dataset = args.dataset
+        """
+        self.env
+        """
         self.num_classes = args.num_classes
         self.global_rounds = args.global_rounds
         self.local_epochs = args.local_epochs
         self.batch_size = args.batch_size
         self.learning_rate = args.local_learning_rate
         self.global_model = copy.deepcopy(args.model)
+        """
+        self.agent = DDPG(args)
+        self.agent.actor()
+        self.agent.critic()
+        """
         self.num_clients = args.num_clients
         self.join_ratio = args.join_ratio
         self.random_join_ratio = args.random_join_ratio
@@ -100,6 +108,10 @@ class Server(object):
                 force=True
             )
 
+    """
+    - set client will be applied at the end of the episode (when train)
+    - train_data + test_data will be sampled from the Memory_buffer
+    """
     def set_clients(self, clientObj):
         for i, train_slow, send_slow in zip(range(self.num_clients), self.train_slow_clients, self.send_slow_clients):
             train_data = read_client_data(self.dataset, i, self.args.noniid, self.args.balance, self.args.alpha_dirich,

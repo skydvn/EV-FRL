@@ -29,36 +29,20 @@ class FedAvg(Server):
                 print("\nEvaluate global model")
                 self.evaluate()
 
+            """ ============================ """
+            for client in self.selected_clients:
+                client.sample()
+            # Env.step()
+            """
+            - Each clients -> 1 memory buffer
+            - When train -> each clients sampled from their own memory.
+            """
             for client in self.selected_clients:
                 client.train()
-                grad = client.grad2vec_list()
-                grad = client.split_layer(grad_list=grad, name_dict=self.layers_dict)
-                grad_all.append(grad)
-                for param in client.model.parameters():
-                    if param.grad is not None:
-                        param.grad.zero_()
-
-            # The length of the layers
-            length = len(grad_all[0])
-
-            # get the pair-wise gradients
-            pair_grad = []
-            for grad_i in range(length):
-                temp = []
-                for j in range(self.num_join_clients):
-                    temp.append(grad_all[j][grad_i])
-                temp = torch.stack(temp)
-                pair_grad.append(temp)
-
-            # get all cos<g_i, g_j>
-            for pair_i, pair in enumerate(pair_grad):
-                layer_wise_cos = self.pair_cos(pair).cpu()
-                self.layer_wise_angle[self.layers_name[pair_i]].append(layer_wise_cos)
-
-            """ Calculate S-conflict scores for all users """
-            for layer, value in self.layer_wise_angle.items():
-                count = np.sum([tensor < self.s for tensor in value[0]])
-                self.S_score[layer] += count
+            """ ============================ 
+            - Get all of the model parameters from agents
+            
+            """
 
             self.receive_models()
             if self.dlg_eval and i % self.dlg_gap == 0:
